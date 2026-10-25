@@ -1,0 +1,11 @@
+{
+  "Name": "Dila Racing - Neo X Rev Strip",
+  "ProfileId": "81ef568e-f1ba-4f49-94f6-5bef3b0ab21a",
+  "Author": "Dila Racing",
+  "GameCode": null,
+  "GlobalBrightness": 100.0,
+  "UseProfileBrightness": false,
+  "LedContainers": [
+    { "ContainerType": "DilaRacing.RevStripEffect", "IsEnabled": true, "StartPosition": 1 }
+  ]
+}

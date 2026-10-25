@@ -26,6 +26,8 @@ $arguments += Get-ChildItem (Join-Path $root 'src') -Filter '*.cs' | ForEach-Obj
 if ($LASTEXITCODE -ne 0) { throw 'Plugin compilation failed.' }
 $testArgs = @('/nologo','/target:exe','/reference:System.Drawing.dll',('/out:' + (Join-Path $output 'DilaRacing.Tests.exe')),
     (Join-Path $root 'src\Core.cs'), (Join-Path $root 'tests\CoreTests.cs'))
+$testArgs += Join-Path $root 'src\RevStripCore.cs'
+$testArgs += Join-Path $root 'src\ThemePresets.cs'
 & $compiler @testArgs
 if ($LASTEXITCODE -ne 0) { throw 'Test compilation failed.' }
 & (Join-Path $output 'DilaRacing.Tests.exe')

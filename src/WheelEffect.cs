@@ -12,6 +12,12 @@ namespace DilaRacing
     [ContainerMetadata(90, "Dila Racing wheel theme", "Wheel colours and driving effects", "Dila Racing", restrictedColorSetCompatible: false)]
     public sealed class WheelEffect : LedsContainerBase
     {
+        private readonly RevWarningHold revWarning = new RevWarningHold();
+        private readonly ThemePlayback playback = new ThemePlayback();
+        private readonly InterventionPlayback interventions = new InterventionPlayback();
+        private HardwareTest lastTest;
+        private WheelTheme lastTheme;
+        private string lastGame, lastCar;
         public WheelId Wheel { get; set; }
         public override void LoadDefaultSettings() { Wheel = WheelId.NeoX; }
         public override bool IsAllowedOutOfGame { get { return true; } }
@@ -37,15 +43,43 @@ namespace DilaRacing
             var plugin = DilaPlugin.Current;
             if (plugin == null)
             {
+                revWarning.Reset();
+                playback.Reset();
+                interventions.Reset();
                 for (int i = 0; i < count; i++) result[i] = Color.Black;
                 return result;
             }
             var theme = plugin.Theme(Wheel);
+            string car = data.CarId ?? data.CarModel;
+            if (!object.ReferenceEquals(theme, lastTheme) || lastGame != data.GameName || lastCar != car)
+            {
+                revWarning.Reset();
+                playback.Reset();
+                interventions.Reset();
+            }
+            lastTheme = theme; lastGame = data.GameName; lastCar = car;
             var input = new Telemetry { Running = data.GameRunning, PitLimiter = data.PitLimiterOn,
-                Redline = data.RPMRedlineReached, Rpm = data.Rpms };
+                Redline = data.RPMRedlineReached, Rpm = data.Rpms,
+                TcActive = data.TCActive, AbsActive = data.AbsActive };
             var test = plugin.ActiveTest(Wheel);
-            if (test != null) input = Telemetry.Preview(test.Mode);
+            if (!object.ReferenceEquals(test, lastTest)) { playback.Reset(); interventions.Reset(); }
+            lastTest = test;
             double time = DilaPlugin.Now;
+            if (test != null)
+            {
+                revWarning.Reset();
+                input = Telemetry.Preview(test.Mode);
+                double phase = (time - (test.EndsAt - 5)) % 1.2;
+                if (test.Mode == PreviewMode.TcAdjustment) input.TcAdjustmentSeconds = phase;
+                if (test.Mode == PreviewMode.AbsAdjustment) input.AbsAdjustmentSeconds = phase;
+            }
+            else
+            {
+                input = revWarning.Apply(theme, input, time);
+                if (!(data is TestLedsGameData)) input = plugin.WithAdjustmentFeedback(Wheel, input, time);
+            }
+            input = playback.Apply(theme, input, time);
+            input = interventions.Apply(theme, input, time);
             for (int i = 0; i < count; i++)
                 result[i] = test != null && test.Mode == PreviewMode.Identify
                     ? (i == test.Led ? Lighting.Dim(Color.White, theme.Settings.Brightness / 100) : Color.Black)

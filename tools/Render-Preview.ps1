@@ -9,7 +9,7 @@ $argsList = @('/nologo', '/target:exe', ('/out:' + (Join-Path $root 'dist\DilaRa
 foreach ($name in @('PresentationCore.dll','PresentationFramework.dll','WindowsBase.dll')) {
     $argsList += '/reference:' + (Join-Path $framework ('WPF\' + $name))
 }
-foreach ($name in @('SimHub.Plugins.dll','GameReaderCommon.dll','GongSolutions.WPF.DragDrop.dll','WoteverCommon.dll')) {
+foreach ($name in @('SimHub.Plugins.dll','GameReaderCommon.dll','GongSolutions.WPF.DragDrop.dll','WoteverCommon.dll','Newtonsoft.Json.dll')) {
     $argsList += '/reference:' + (Join-Path $SimHubPath $name)
 }
 $argsList += Join-Path $PSScriptRoot 'Preview.cs'
