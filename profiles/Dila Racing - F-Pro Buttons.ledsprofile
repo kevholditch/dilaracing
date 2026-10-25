@@ -1,0 +1,11 @@
+{
+  "Name": "Dila Racing - F-Pro Buttons",
+  "ProfileId": "d77d0d11-cf52-4b91-b352-791e924737bc",
+  "Author": "Dila Racing",
+  "GameCode": null,
+  "GlobalBrightness": 100.0,
+  "UseProfileBrightness": false,
+  "LedContainers": [
+    { "ContainerType": "DilaRacing.WheelEffect", "Wheel": 1, "IsEnabled": true, "StartPosition": 1 }
+  ]
+}

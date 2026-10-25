@@ -1,0 +1,11 @@
+{
+  "Name": "Dila Racing - Neo X Buttons",
+  "ProfileId": "281d36b8-0fbc-4a24-af61-9a243e8dfe31",
+  "Author": "Dila Racing",
+  "GameCode": null,
+  "GlobalBrightness": 100.0,
+  "UseProfileBrightness": false,
+  "LedContainers": [
+    { "ContainerType": "DilaRacing.WheelEffect", "Wheel": 0, "IsEnabled": true, "StartPosition": 1 }
+  ]
+}
