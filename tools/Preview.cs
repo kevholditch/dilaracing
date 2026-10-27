@@ -215,7 +215,7 @@ internal static class PreviewProgram
         customSettings.RevStrip.SingleColor = "#40C080";
         customSettings.TcAlwaysBlue = customSettings.AbsAlwaysRed = true;
         customSettings.TcAdjustmentFlash = customSettings.AbsAdjustmentFlash = true;
-        customSettings.IdleMode = customSettings.RacingMode = DilaRacing.ThemeMode.Pulse;
+        customSettings.IdleMode = DilaRacing.ThemeMode.Twinkle; customSettings.RacingMode = DilaRacing.ThemeMode.Pulse;
         var library = new DilaRacing.ThemeLibrarySettings { Themes = DilaRacing.ThemePresets.Save(new List<DilaRacing.ThemePreset>(), "Circuit Night", DilaRacing.WheelId.FPro, customSettings, false) };
         var libraryJson = Newtonsoft.Json.JsonConvert.SerializeObject(library);
         var loadedLibrary = DilaRacing.ThemePresets.ValidateLibrary(Newtonsoft.Json.JsonConvert.DeserializeObject<DilaRacing.ThemeLibrarySettings>(libraryJson));
@@ -223,8 +223,8 @@ internal static class PreviewProgram
             throw new Exception("Custom theme library must survive restart serialization.");
         if (loadedLibrary[0].Settings.RevStrip.ColorMode != DilaRacing.RevStripColorMode.SingleColor || loadedLibrary[0].Settings.RevStrip.SingleColor != "#40C080")
             throw new Exception("Custom strip colour and scheme must survive serialization.");
-        if (loadedLibrary[0].Settings.ModeFor(false) != DilaRacing.ThemeMode.Pulse || loadedLibrary[0].Settings.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
-            throw new Exception("Pulse must persist for both idle and racing in custom themes.");
+        if (loadedLibrary[0].Settings.ModeFor(false) != DilaRacing.ThemeMode.Twinkle || loadedLibrary[0].Settings.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
+            throw new Exception("Twinkle and Pulse must persist independently in custom themes.");
         typeof(DilaRacing.DilaPlugin).GetField("customThemes", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(plugin, loadedLibrary);
         var settings = new DilaRacing.SettingsControl(plugin);
         var tabs = ((StackPanel)((ScrollViewer)settings.Content).Content).Children.OfType<TabControl>().Single();
@@ -239,8 +239,8 @@ internal static class PreviewProgram
                 throw new Exception("Custom theme selection must populate all controls on wheel " + wheelIndex);
             if (!draft.TcAlwaysBlue || !draft.AbsAlwaysRed || !draft.TcAdjustmentFlash || !draft.AbsAdjustmentFlash)
                 throw new Exception("Feedback checkboxes must persist and load on both wheel tabs.");
-            if (draft.ModeFor(false) != DilaRacing.ThemeMode.Pulse || draft.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
-                throw new Exception("Pulse custom theme must load into both mode selectors on each wheel.");
+            if (draft.ModeFor(false) != DilaRacing.ThemeMode.Twinkle || draft.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
+                throw new Exception("Twinkle/Pulse custom theme must load into mode selectors on each wheel.");
             if (draft.RevStrip.ColorMode != DilaRacing.RevStripColorMode.SingleColor || draft.RevStrip.SingleColor != "#40C080")
                 throw new Exception("Custom strip colour must load in the Neo X editor and remain portable through F-Pro themes.");
             choice.SelectedItem = choice.Items.OfType<DilaRacing.ThemePreset>().Single(x => x.Name == "Steel & Ice");
@@ -260,14 +260,15 @@ internal static class PreviewProgram
                 var modeChoice = (ComboBox)editor.GetType().GetField(selector, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
                 if (!modeChoice.Items[(int)DilaRacing.ThemeMode.Pulse].ToString().StartsWith("Pulse"))
                     throw new Exception("Pulse needs a labelled option on both wheel mode selectors.");
-                modeChoice.SelectedIndex = (int)DilaRacing.ThemeMode.Pulse;
+                if (!modeChoice.Items[(int)DilaRacing.ThemeMode.Twinkle].ToString().StartsWith("Twinkle")) throw new Exception("Twinkle option missing.");
+                modeChoice.SelectedIndex = (int)(selector == "idleMode" ? DilaRacing.ThemeMode.Twinkle : DilaRacing.ThemeMode.Pulse);
             }
             draft = (DilaRacing.WheelSettings)read.Invoke(editor, null);
-            if (draft.ModeFor(false) != DilaRacing.ThemeMode.Pulse || draft.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
-                throw new Exception("Selecting Pulse must read back correctly on both wheels.");
+            if (draft.ModeFor(false) != DilaRacing.ThemeMode.Twinkle || draft.ModeFor(true) != DilaRacing.ThemeMode.Pulse)
+                throw new Exception("Selecting Twinkle/Pulse must read back correctly on both wheels.");
         }
         Console.WriteLine("PASS: theme library serialization and WPF preset selection on both wheels, all preferences, physical mapping and draft isolation.");
-        Console.WriteLine("PASS: Pulse mode persistence and both idle/racing selectors on both wheels.");
+        Console.WriteLine("PASS: Twinkle/Pulse mode persistence and both idle/racing selectors on both wheels.");
         settings.Measure(new Size(1000, 2700));
         settings.Arrange(new Rect(0, 0, 1000, 2700));
         settings.UpdateLayout();

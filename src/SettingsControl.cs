@@ -127,8 +127,8 @@ namespace DilaRacing
             endButton = SettingsControl.Button("End " + endColor, delegate { ChooseColor(false); });
             colors.Children.Add(startButton); colors.Children.Add(endButton); Children.Add(colors);
             brightness = AddSlider("Brightness (%)", 0, 100, s.Brightness, 1);
-            fade = AddSlider("Fade / pulse duration (seconds)", 1, 30, s.FadeSeconds, 0.5);
-            Children.Add(SettingsControl.Note("Pulse twinkles individual buttons at different times, with soft fades, random pauses and shades between your two colours. Duration controls the pace (minimum 4 seconds); try 6–8 seconds for a gentle Christmas-tree effect.", 13));
+            fade = AddSlider("Animation duration (seconds)", 1, 30, s.FadeSeconds, 0.5);
+            Children.Add(SettingsControl.Note("Twinkle gives a fuller Christmas-tree effect: at least half the buttons stay at half brightness or above while others gently fade, using shades between your two colours. Pulse keeps the sparse effect with longer dark pauses. Duration controls both (minimum 4 seconds); try 6–8 seconds.", 13));
             idle = AddCheck("Show theme when no game is running", s.ShowWhenIdle);
             if (wheel == WheelId.NeoX)
             {
@@ -291,7 +291,7 @@ namespace DilaRacing
         private ComboBox AddMode(string label, ThemeMode selected)
         {
             Children.Add(SettingsControl.Note(label, 13));
-            var choice = new ComboBox { ItemsSource = new[] { "Solid colour", "Bottom to top — once", "Bottom to top — repeat", "Static vertical gradient", "Pulse — gentle twinkle" }, SelectedIndex = (int)selected, MinWidth = 290, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 8) };
+            var choice = new ComboBox { ItemsSource = new[] { "Solid colour", "Bottom to top — once", "Bottom to top — repeat", "Static vertical gradient", "Pulse — sparse lights", "Twinkle — Christmas tree" }, SelectedIndex = (int)selected, MinWidth = 290, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 8) };
             Children.Add(choice); return choice;
         }
         private Slider AddSlider(string label, double min, double max, double value, double step)

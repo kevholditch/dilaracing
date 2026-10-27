@@ -7,7 +7,7 @@ using System.Linq;
 namespace DilaRacing
 {
     public enum WheelId { NeoX, FPro }
-    public enum ThemeMode { Solid, BottomToTopOnce, BottomToTopRepeat, VerticalGradient, Pulse }
+    public enum ThemeMode { Solid, BottomToTopOnce, BottomToTopRepeat, VerticalGradient, Pulse, Twinkle }
     public enum PreviewMode { Theme, RevLimit, PitLimiter, Both, Identify, IdleTheme, TractionControl, Abs, Assists, TcAdjustment, AbsAdjustment }
 
     public sealed class WheelSettings
@@ -301,6 +301,25 @@ namespace DilaRacing
                     fraction = Noise(led, cycle, 67);
                     intensity = progress > 0 && progress < 1 && Noise(led, cycle, 89) > 0.18
                         ? Math.Pow(Math.Sin(Math.PI * progress), 2) : 0;
+                }
+                else if (mode == ThemeMode.Twinkle)
+                {
+                    // Complementary pairs keep at least half the channels at
+                    // half brightness or above. Different pair speeds/phases
+                    // avoid a whole-wheel pulse while keeping every fade smooth.
+                    int pair = led / 2;
+                    double position = Math.Max(0, data.ThemeElapsedSeconds ?? elapsed)
+                        / Math.Max(4, s.FadeSeconds) * (0.85 + 0.3 * Noise(pair, 0, 101))
+                        + Noise(pair, 0, 103);
+                    double wave = Math.Sin(position * Math.PI * 2);
+                    intensity = 0.5 + 0.5 * ((led % 2 == 0) ? wave : -wave);
+                    // Colour changes blend across cycle boundaries, including
+                    // while a button remains lit.
+                    uint cycle = (uint)Math.Floor(position);
+                    double blend = position - Math.Floor(position);
+                    blend = blend * blend * (3 - 2 * blend);
+                    double from = Noise(led, cycle, 107);
+                    fraction = from + (Noise(led, cycle + 1, 107) - from) * blend;
                 }
                 else if (mode == ThemeMode.VerticalGradient) fraction = theme.Heights[led];
                 else if (mode != ThemeMode.Solid)

@@ -403,6 +403,57 @@ internal static class CoreTests
                 Check(Same(Lighting.At(pulseTheme, 0, pulseClock.Apply(pulseTheme, idle, 104), 104), Lighting.At(pulseTheme, 0, idle, 4)), "Twinkle uses renderer playback clock");
                 Check(Same(Lighting.At(pulseTheme, 0, pulseClock.Apply(pulseTheme, drive, 105), 105), Lighting.At(pulseTheme, 0, drive, 0)), "Switching idle/racing restarts twinkle playback");
             }
+            Check((int)ThemeMode.Twinkle == 5 && (int)ThemeMode.Pulse == 4, "Twinkle appends a mode without changing saved Pulse themes");
+            foreach (WheelId wheel in new[] { WheelId.NeoX, WheelId.FPro })
+            foreach (double duration in new[] { 4.0, 8.0, 30.0 })
+            {
+                var settings = WheelSettings.Defaults(wheel);
+                settings.IdleMode = settings.RacingMode = ThemeMode.Twinkle;
+                settings.StartColor = settings.EndColor = "#FFFFFF";
+                settings.Brightness = 100; settings.FadeSeconds = duration;
+                settings.Validate(wheel);
+                var twinkleTheme = new WheelTheme(settings, wheel, 0);
+                foreach (var state in new[] { idle, drive })
+                {
+                    bool dense = true, smooth = true, staggered = false;
+                    int count = WheelSettings.Count(wheel);
+                    var lows = new bool[count]; var highs = new bool[count];
+                    for (int sample = 0; sample < 2400; sample++)
+                    {
+                        double time = sample * 0.05;
+                        int visible = 0;
+                        for (int led = 0; led < count; led++)
+                        {
+                            var c = Lighting.At(twinkleTheme, led, state, time);
+                            if (c.R >= 127) visible++;
+                            lows[led] |= c.R < 26; highs[led] |= c.R > 229;
+                            smooth &= Math.Abs(c.R - Lighting.At(twinkleTheme, led, state, time + 0.01).R) <= 4;
+                            if (led >= 2) staggered |= Math.Abs(c.R - Lighting.At(twinkleTheme, 0, state, time).R) > 50;
+                        }
+                        dense &= visible >= count / 2;
+                    }
+                    Check(dense, "Twinkle keeps at least half visibly lit at every sampled frame " + wheel + "/" + duration);
+                    Check(smooth && staggered, "Twinkle is smooth and staggered " + wheel + "/" + duration);
+                    Check(Array.TrueForAll(lows, x => x) && Array.TrueForAll(highs, x => x), "Every Twinkle LED brightens and dims " + wheel);
+                }
+                settings.StartColor = "#FF8000"; settings.EndColor = "#0080FF"; settings.Brightness = 25;
+                twinkleTheme = new WheelTheme(settings, wheel, 0);
+                bool smoothColour = true, bounded = true;
+                for (int sample = 0; sample < 2400; sample++)
+                for (int led = 0; led < WheelSettings.Count(wheel); led++)
+                {
+                    var c = Lighting.At(twinkleTheme, led, drive, sample * 0.05);
+                    var next = Lighting.At(twinkleTheme, led, drive, sample * 0.05 + 0.01);
+                    bounded &= c.R <= 64 && c.G <= 64 && c.B <= 64;
+                    smoothColour &= Math.Abs(c.R - next.R) <= 2 && Math.Abs(c.G - next.G) <= 2 && Math.Abs(c.B - next.B) <= 2;
+                }
+                Check(bounded && smoothColour, "Twinkle honours brightness and blends colours across cycles " + wheel);
+                Check(Same(Lighting.At(twinkleTheme, 0, Telemetry.Preview(PreviewMode.PitLimiter), 0), Color.FromArgb(0, 0, 64)), "Pit warning overrides Twinkle");
+                Check(Same(Lighting.At(twinkleTheme, 0, Telemetry.Preview(PreviewMode.RevLimit), 0), Color.FromArgb(64, 0, 0)), "Rev warning overrides Twinkle");
+                var clock = new ThemePlayback();
+                clock.Apply(twinkleTheme, idle, 100);
+                Check(Same(Lighting.At(twinkleTheme, 0, clock.Apply(twinkleTheme, idle, 104), 104), Lighting.At(twinkleTheme, 0, idle, 4)), "Twinkle follows playback clock");
+            }
             var oneColor = new RevStripSettings { ColorMode = RevStripColorMode.SingleColor, SingleColor = "#40C080", Brightness = 100 };
             var chosen = WheelSettings.ParseColor(oneColor.SingleColor);
             foreach (var pattern in new[] { RevStripMode.Progressive, RevStripMode.Converging, RevStripMode.Minimal })
